@@ -1,0 +1,19 @@
+# Common IntelliJ Platform excludes
+
+# User specific
+**/.idea/
+
+*.db
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.iml
+.vs/
+[Bb]in/
+[Oo]bj/
+_UpgradeReport_Files/
+[Pp]ackages/
+
+Desktop.ini
+.DS_Store
