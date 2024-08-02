@@ -11,6 +11,17 @@
       <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0-preview.6.24327.4" />
       <PackageReference Include="Spectre.Console" Version="0.49.2-preview.0.13" />
       <PackageReference Include="Spectre.Console.Cli" Version="0.49.2-preview.0.13" />
+      <PackageReference Include="Spectre.Console.ImageSharp" Version="0.49.2-preview.0.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="assets" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <None Update="assets/lazy.png">
+      	<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
