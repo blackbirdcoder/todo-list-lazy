@@ -59,7 +59,7 @@ namespace ToDoList
             }
         }
         
-        public void Write(String data, Boolean status)
+        public void Write(string data, bool status)
         {
             using (SqliteConnection connection = new SqliteConnection(_connectString))
             {
@@ -123,7 +123,7 @@ namespace ToDoList
         public void Intro()
         {
             Table mainContent = new Table();
-            String path = Path.Combine(AppContext.BaseDirectory, "assets", "lazy.png");
+            string path = Path.Combine(AppContext.BaseDirectory, "assets", "lazy.png");
             CanvasImage image = new CanvasImage(path);
             Table imageBox = new Table();
             
@@ -173,8 +173,8 @@ namespace ToDoList
         static void Main(string[] args)
         {
             ConsoleKeyInfo answerKey;
-            Boolean started = true;
-            Boolean isWork = false;
+            bool started = true;
+            bool isWork = false;
             Database database = new Database();
             Menu menu = new Menu();
             Handler handler = new Handler();
