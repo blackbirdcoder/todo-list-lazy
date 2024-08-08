@@ -26,7 +26,7 @@ namespace ToDoList
             {"dialog", "navajowhite1"},
             {"backlight", "turquoise2"},
             {"successful", "seagreen3"},
-            {"failure", "deeppink3"},
+            {"failure", "indianred1"},
         };
         
         private static Dictionary<string, char> _commandKey = new Dictionary<string, char>
@@ -285,35 +285,38 @@ namespace ToDoList
             tasks.Columns[1].Width(_sizes["contentWidth"] / 2);
             tasks.Caption($"[{_colors["minor"]}]♥ TODO list Lazy ♥[/]");
             tasks.BorderStyle = Style.Parse(_colors["minor"]);
-            
-            suiteTask.ForEach(dict =>
-            {
-                List<Table> tablesDescription = new List<Table>();
-                foreach (var item in dict)
-                {
-                    Table tablePart = new Table();
-                    tablePart.Border = TableBorder.None;
-                    string taskLine = $"[{_colors["backlight"]}]{item.Value }[/]";
 
-                    if (item.Key == _taskColumnNames[2].ToLower())
+            if (suiteTask.Count > 0)
+            {
+                suiteTask.ForEach(dict =>
+                {
+                    List<Table> tablesDescription = new List<Table>();
+                    foreach (var item in dict)
                     {
-                        taskLine = item.Value == _taskStatusDescription["negative"]
-                            ? $"[{_colors["failure"]}]{item.Value}[/]"
-                            : $"[{_colors["successful"]}]{item.Value}[/]";
-                    }
+                        Table tablePart = new Table();
+                        tablePart.Border = TableBorder.None;
+                        string taskLine = $"[{_colors["backlight"]}]{item.Value }[/]";
+
+                        if (item.Key == _taskColumnNames[2].ToLower())
+                        {
+                            taskLine = item.Value == _taskStatusDescription["negative"]
+                                ? $"[{_colors["failure"]}]{item.Value}[/]"
+                                : $"[{_colors["successful"]}]{item.Value}[/]";
+                        }
                     
-                    if (item.Key == _taskColumnNames[1].ToLower())
-                    {
-                        tablePart.AddColumn(taskLine).LeftAligned();
+                        if (item.Key == _taskColumnNames[1].ToLower())
+                        {
+                            tablePart.AddColumn(taskLine).LeftAligned();
+                        }
+                        else
+                        {
+                            tablePart.AddColumn(taskLine).Centered();
+                        }
+                        tablesDescription.Add(tablePart);
                     }
-                    else
-                    {
-                        tablePart.AddColumn(taskLine).Centered();
-                    }
-                    tablesDescription.Add(tablePart);
-                }
-                tasks.AddRow(tablesDescription);
-            });
+                    tasks.AddRow(tablesDescription);
+                });
+            }
 
             mainContent.AddRow(tasks);
             AnsiConsole.Write(mainContent);
@@ -363,8 +366,9 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["view"])
                 {
-                    
+                    menu.Notepad(suiteTask);
                 }
+                // TODO: Continue implementation Write
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["write"])
                 {
                     database.Write("buy keyboard", false);
