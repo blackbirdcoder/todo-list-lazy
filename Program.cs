@@ -77,6 +77,9 @@ namespace ToDoList
     {
         public delegate List<Dictionary<string, string>> AmbassadorReader();
         public AmbassadorReader TaskReader;
+        public delegate bool AmbassadorWriter(string? task, bool status);
+        public AmbassadorWriter TaskWriter;
+        
         private string[] _taskColumNames = Settings.GetColumnNames();
         private Dictionary<string, string> _taskStatusDescription = Settings.GetTaskStatusDescription();
 
@@ -96,6 +99,22 @@ namespace ToDoList
                 }
             });
             return tasks;
+        }
+
+        public bool DataWriter(Dictionary<string, string?> rawTaskData)
+        {
+            bool state = false;
+            bool taskStatus;
+            
+            
+            if (!String.IsNullOrWhiteSpace(rawTaskData["text"]) && !String.IsNullOrWhiteSpace(rawTaskData["status"]))
+            {
+                char answer = Convert.ToChar(rawTaskData["status"][0]);
+                taskStatus = answer == '0' ? false : true;
+                state = TaskWriter(rawTaskData["text"], taskStatus);
+            }
+            
+            return state;
         }
 
     }
@@ -126,7 +145,7 @@ namespace ToDoList
             }
         }
         
-        public void Write(string data, bool status)
+        public bool Write(string data, bool status)
         {
             using (SqliteConnection connection = new SqliteConnection(_connectString))
             {
@@ -139,6 +158,7 @@ namespace ToDoList
                     command.Parameters.AddWithValue("$Task", data);
                     command.Parameters.AddWithValue("$Status", Convert.ToByte(status));
                     command.ExecuteNonQuery();
+                    return true;
                 }
                 catch (Exception exception)
                 {
@@ -146,6 +166,7 @@ namespace ToDoList
                     Console.WriteLine(exception);
                 }
             }
+            return false;
         }
         
         public List<Dictionary<string, string>> Read()
@@ -321,6 +342,26 @@ namespace ToDoList
             mainContent.AddRow(tasks);
             AnsiConsole.Write(mainContent);
         }
+
+        public void TextInputTask()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["dialog"]}]Describe the task (Press[/][{_colors["accent"]}] Enter[/]" +
+                                   $"[{_colors["dialog"]}] when finished)[/]");
+        }
+
+        public void StatusInputTask()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["dialog"]}]Specify the task status (Press[{_colors["accent"]}] Enter[/] " +
+                                   $"when finished)[/]\n[{_colors["dialog"]}]([/][{_colors["accent"]}]0[/][{_colors["dialog"]}])" +
+                                   $" - [/][{_colors["failure"]}]not ready[/]" +
+                                   $" [{_colors["dialog"]}]([/][{_colors["accent"]}]1[/][{_colors["dialog"]}])" +
+                                   $" - [/][{_colors["successful"]}]ready[/]");
+        }
+
+        public void WritingFailed()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not created! Try again![/]");
+        }
     }
     
     internal class Program
@@ -330,10 +371,12 @@ namespace ToDoList
             ConsoleKeyInfo answerKey;
             bool started = true;
             bool isWork = false;
+            bool showNotepad = true;
             Database database = new Database();
             Menu menu = new Menu();
             Handler handler = new Handler();
             handler.TaskReader = database.Read;
+            handler.TaskWriter = database.Write;
             database.Initial();
             menu.Intro();
             
@@ -356,7 +399,10 @@ namespace ToDoList
             while (isWork)
             {
                 List<Dictionary<string, string>> suiteTask = handler.ReadData();
-                menu.Notepad(suiteTask);
+                if (showNotepad)
+                {
+                    menu.Notepad(suiteTask);
+                }
                 answerKey = Console.ReadKey(intercept: true);
                 
                 if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["quit"])
@@ -368,10 +414,23 @@ namespace ToDoList
                 {
                     menu.Notepad(suiteTask);
                 }
-                // TODO: Continue implementation Write
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["write"])
                 {
-                    database.Write("buy keyboard", false);
+                    showNotepad = false;
+                    Dictionary<string, string?> rawTaskDescription = new Dictionary<string, string?>();
+                    menu.TextInputTask();
+                    rawTaskDescription.Add("text", Console.ReadLine());
+                    menu.StatusInputTask();
+                    rawTaskDescription.Add("status", Console.ReadLine());
+                    bool operationStatus = handler.DataWriter(rawTaskDescription);
+                    if (operationStatus)
+                    {
+                        showNotepad = true;
+                    }
+                    else
+                    {
+                        menu.WritingFailed();
+                    }
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["completed"])
                 {
