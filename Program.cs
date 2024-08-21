@@ -79,6 +79,9 @@ namespace ToDoList
         public AmbassadorReader TaskReader;
         public delegate bool AmbassadorWriter(string? task, bool status);
         public AmbassadorWriter TaskWriter;
+
+        public delegate bool AmbassadorComplete(int taskId);
+        public AmbassadorComplete TaskUpdate;
         
         private string[] _taskColumNames = Settings.GetColumnNames();
         private Dictionary<string, string> _taskStatusDescription = Settings.GetTaskStatusDescription();
@@ -114,6 +117,17 @@ namespace ToDoList
                 state = TaskWriter(rawTaskData["text"], taskStatus);
             }
             
+            return state;
+        }
+
+        public bool TaskAccomplished(string? taskId)
+        {
+            int readyTaskId;
+            bool state = int.TryParse(taskId, out readyTaskId);
+            if (state)
+            {
+                state = TaskUpdate(readyTaskId);
+            }
             return state;
         }
 
@@ -203,6 +217,33 @@ namespace ToDoList
             }
             
             return result;
+        }
+        
+        public bool Update(int taskId)
+        {
+            bool state = false;
+            using (SqliteConnection connection = new SqliteConnection(_connectString))
+            {
+                try
+                {
+                    connection.Open();
+                    SqliteCommand command = connection.CreateCommand();
+                    bool taskStatus = true;
+                    command.CommandText = @"UPDATE TodoListLazy SET Status = $taskStatus WHERE Id = $taskId";
+                    command.Parameters.AddWithValue("$taskStatus", Convert.ToByte(taskStatus));
+                    command.Parameters.AddWithValue("$taskId", taskId);
+                    int resultOperation = command.ExecuteNonQuery();
+                    state = resultOperation > 0;
+
+                }
+                catch (Exception exception)
+                {
+                    // TODO: Handler exception
+                    Console.WriteLine(exception);
+                }
+            }
+            
+            return state;
         }
     }
     class Menu
@@ -362,6 +403,17 @@ namespace ToDoList
         {
             AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not created! Try again![/]");
         }
+
+        public void TextInputTaskId()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["dialog"]}]Please specify the task number (Press[/][{_colors["accent"]}] Enter[/]" +
+                                   $"[{_colors["dialog"]}] when finished)[/]");
+        }
+
+        public void UpdateFailed()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Updating task status failed![/]");
+        }
     }
     
     internal class Program
@@ -377,6 +429,7 @@ namespace ToDoList
             Handler handler = new Handler();
             handler.TaskReader = database.Read;
             handler.TaskWriter = database.Write;
+            handler.TaskUpdate = database.Update;
             database.Initial();
             menu.Intro();
             
@@ -434,7 +487,26 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["completed"])
                 {
-                    Console.WriteLine("Completed Branch!");
+                    showNotepad = false;
+                    menu.TextInputTaskId();
+                    string? taskId = Console.ReadLine();
+                    bool operationStatus = handler.TaskAccomplished(taskId);
+                    if (operationStatus)
+                    {
+                        showNotepad = true;
+                    }
+                    else
+                    {
+                        menu.UpdateFailed();
+                    }
+                }
+                else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["update"])
+                {
+                    Console.WriteLine("Update Branch!");
+                }
+                else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["delete"])
+                {
+                    Console.WriteLine("Delete Branch!");
                 }
             }
         }
