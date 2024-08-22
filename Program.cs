@@ -82,6 +82,9 @@ namespace ToDoList
 
         public delegate bool AmbassadorComplete(int taskId);
         public AmbassadorComplete TaskUpdate;
+
+        public delegate bool AmbassadorUpdate(Dictionary<string, string?> taskData);
+        public AmbassadorUpdate TaskFullUpdate;
         
         private string[] _taskColumNames = Settings.GetColumnNames();
         private Dictionary<string, string> _taskStatusDescription = Settings.GetTaskStatusDescription();
@@ -127,6 +130,21 @@ namespace ToDoList
             if (state)
             {
                 state = TaskUpdate(readyTaskId);
+            }
+            return state;
+        }
+
+        public bool FullUpdate(Dictionary<string, string?> taskData)
+        {
+            bool state = false;
+            bool taskStatus;
+            
+            if (!String.IsNullOrWhiteSpace(taskData["text"]) && !String.IsNullOrWhiteSpace(taskData["status"]))
+            {
+                char answer = Convert.ToChar(taskData["status"][0]);
+                taskStatus = answer == '0' ? false : true;
+                taskData["status"] = taskStatus.ToString();
+                state = TaskFullUpdate(taskData);
             }
             return state;
         }
@@ -232,6 +250,33 @@ namespace ToDoList
                     command.CommandText = @"UPDATE TodoListLazy SET Status = $taskStatus WHERE Id = $taskId";
                     command.Parameters.AddWithValue("$taskStatus", Convert.ToByte(taskStatus));
                     command.Parameters.AddWithValue("$taskId", taskId);
+                    int resultOperation = command.ExecuteNonQuery();
+                    state = resultOperation > 0;
+
+                }
+                catch (Exception exception)
+                {
+                    // TODO: Handler exception
+                    Console.WriteLine(exception);
+                }
+            }
+            
+            return state;
+        }
+
+        public bool Update(Dictionary<string, string?> taskData)
+        {
+            bool state = false;
+            using (SqliteConnection connection = new SqliteConnection(_connectString))
+            {
+                try
+                {
+                    connection.Open();
+                    SqliteCommand command = connection.CreateCommand();
+                    command.CommandText = @"UPDATE TodoListLazy SET Task = $task, Status = $taskStatus WHERE Id = $taskId";
+                    command.Parameters.AddWithValue("$task", taskData["text"]);
+                    command.Parameters.AddWithValue("$taskStatus", Convert.ToByte(Convert.ToBoolean(taskData["status"])));
+                    command.Parameters.AddWithValue("$taskId", taskData["taskId"]);
                     int resultOperation = command.ExecuteNonQuery();
                     state = resultOperation > 0;
 
@@ -414,6 +459,11 @@ namespace ToDoList
         {
             AnsiConsole.MarkupLine($"[{_colors["failure"]}]Updating task status failed![/]");
         }
+
+        public void FullUpdateFailed()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not updated failure![/]");
+        }
     }
     
     internal class Program
@@ -430,6 +480,7 @@ namespace ToDoList
             handler.TaskReader = database.Read;
             handler.TaskWriter = database.Write;
             handler.TaskUpdate = database.Update;
+            handler.TaskFullUpdate = database.Update;
             database.Initial();
             menu.Intro();
             
@@ -502,7 +553,23 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["update"])
                 {
-                    Console.WriteLine("Update Branch!");
+                    showNotepad = false;
+                    Dictionary<string, string?> rawTaskDescription = new Dictionary<string, string?>();
+                    menu.TextInputTaskId();
+                    rawTaskDescription.Add("taskId", Console.ReadLine());
+                    menu.TextInputTask();
+                    rawTaskDescription.Add("text", Console.ReadLine());
+                    menu.StatusInputTask();
+                    rawTaskDescription.Add("status", Console.ReadLine());
+                    bool operationStatus = handler.FullUpdate(rawTaskDescription);
+                    if (operationStatus)
+                    {
+                        showNotepad = true;
+                    }
+                    else
+                    {
+                        menu.FullUpdateFailed();
+                    }
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["delete"])
                 {
