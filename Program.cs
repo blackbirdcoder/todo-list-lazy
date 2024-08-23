@@ -492,6 +492,11 @@ namespace ToDoList
         {
             AnsiConsole.MarkupLine($"[{_colors["failure"]}]{text}![/]");
         }
+
+        public void OperationTitle(string text)
+        {
+            AnsiConsole.MarkupLine($"[{_colors["accent"]}]{text}[/]");
+        }
     }
     
     internal class Program
@@ -549,6 +554,7 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["write"])
                 {
+                    menu.OperationTitle("Task writing operation");
                     showNotepad = false;
                     Dictionary<string, string?> rawTaskDescription = new Dictionary<string, string?>();
                     menu.TextInputTask();
@@ -567,6 +573,7 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["completed"])
                 {
+                    menu.OperationTitle("Operation mark task as completed");
                     showNotepad = false;
                     menu.TextInputTaskId();
                     string? taskId = Console.ReadLine();
@@ -582,6 +589,7 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["update"])
                 {
+                    menu.OperationTitle("Task update operation");
                     showNotepad = false;
                     Dictionary<string, string?> rawTaskDescription = new Dictionary<string, string?>();
                     menu.TextInputTaskId();
@@ -602,6 +610,7 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["delete"])
                 {
+                    menu.OperationTitle("Task delete Operation");
                     showNotepad = false;
                     menu.TextInputTaskId();
                     string? taskId = Console.ReadLine();
