@@ -85,6 +85,9 @@ namespace ToDoList
 
         public delegate bool AmbassadorUpdate(Dictionary<string, string?> taskData);
         public AmbassadorUpdate TaskFullUpdate;
+
+        public delegate bool AmbassadorDelete(int taskId);
+        public AmbassadorDelete TaskDelete;
         
         private string[] _taskColumNames = Settings.GetColumnNames();
         private Dictionary<string, string> _taskStatusDescription = Settings.GetTaskStatusDescription();
@@ -145,6 +148,17 @@ namespace ToDoList
                 taskStatus = answer == '0' ? false : true;
                 taskData["status"] = taskStatus.ToString();
                 state = TaskFullUpdate(taskData);
+            }
+            return state;
+        }
+
+        public bool CompletelyDeleteTask(string? taskId)
+        {
+            int readyTaskId;
+            bool state = int.TryParse(taskId, out readyTaskId);
+            if (state)
+            {
+                state = TaskDelete(readyTaskId);
             }
             return state;
         }
@@ -288,6 +302,30 @@ namespace ToDoList
                 }
             }
             
+            return state;
+        }
+
+        public bool Delete(int taskId)
+        {
+            bool state = false;
+            using (SqliteConnection connection = new SqliteConnection(_connectString))
+            {
+                try
+                {
+                    connection.Open();
+                    SqliteCommand command = connection.CreateCommand();
+                    command.CommandText = @"DELETE FROM TodoListLazy WHERE Id = $taskId";
+                    command.Parameters.AddWithValue("$taskId", taskId);
+                    int resultOperation = command.ExecuteNonQuery();
+                    state = resultOperation > 0;
+
+                }
+                catch (Exception exception)
+                {
+                    // TODO: Handler exception
+                    Console.WriteLine(exception);
+                }
+            }
             return state;
         }
     }
@@ -464,6 +502,11 @@ namespace ToDoList
         {
             AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not updated failure![/]");
         }
+        
+        public void DeleteFailed()
+        {
+            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Deleting task failed![/]");
+        }
     }
     
     internal class Program
@@ -481,6 +524,7 @@ namespace ToDoList
             handler.TaskWriter = database.Write;
             handler.TaskUpdate = database.Update;
             handler.TaskFullUpdate = database.Update;
+            handler.TaskDelete = database.Delete;
             database.Initial();
             menu.Intro();
             
@@ -573,7 +617,18 @@ namespace ToDoList
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["delete"])
                 {
-                    Console.WriteLine("Delete Branch!");
+                    showNotepad = false;
+                    menu.TextInputTaskId();
+                    string? taskId = Console.ReadLine();
+                    bool operationStatus = handler.CompletelyDeleteTask(taskId);
+                    if (operationStatus)
+                    {
+                        showNotepad = true;
+                    }
+                    else
+                    {
+                        menu.DeleteFailed();
+                    }
                 }
             }
         }
