@@ -347,7 +347,7 @@ namespace ToDoList
             mainContent.Border = TableBorder.Square;
             mainContent.BorderStyle = Style.Parse(_colors["minor"]);
             mainContent.Width(_sizes["contentWidth"]);
-            mainContent.AddColumn($"[bold {_colors["accent"]}] ✦✦ TODO LIST LAZY ✦✦ [/]").Centered();
+            mainContent.AddColumn($"[bold {_colors["accent"]}] ♥ TODO LIST LAZY ♥ [/]").Centered();
             mainContent.Columns[0].Centered();
             mainContent.Columns[0].NoWrap();
             mainContent.AddRow("");
@@ -481,31 +481,16 @@ namespace ToDoList
                                    $" [{_colors["dialog"]}]([/][{_colors["accent"]}]1[/][{_colors["dialog"]}])" +
                                    $" - [/][{_colors["successful"]}]ready[/]");
         }
-
-        public void WritingFailed()
-        {
-            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not created! Try again![/]");
-        }
-
+        
         public void TextInputTaskId()
         {
             AnsiConsole.MarkupLine($"[{_colors["dialog"]}]Please specify the task number (Press[/][{_colors["accent"]}] Enter[/]" +
                                    $"[{_colors["dialog"]}] when finished)[/]");
         }
-
-        public void UpdateFailed()
-        {
-            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Updating task status failed![/]");
-        }
-
-        public void FullUpdateFailed()
-        {
-            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Task not updated failure![/]");
-        }
         
-        public void DeleteFailed()
+        public void NotificationFailure(string text)
         {
-            AnsiConsole.MarkupLine($"[{_colors["failure"]}]Deleting task failed![/]");
+            AnsiConsole.MarkupLine($"[{_colors["failure"]}]{text}![/]");
         }
     }
     
@@ -577,7 +562,7 @@ namespace ToDoList
                     }
                     else
                     {
-                        menu.WritingFailed();
+                        menu.NotificationFailure("Task not created! Try again");
                     }
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["completed"])
@@ -592,7 +577,7 @@ namespace ToDoList
                     }
                     else
                     {
-                        menu.UpdateFailed();
+                        menu.NotificationFailure("Updating task status failed");
                     }
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["update"])
@@ -612,7 +597,7 @@ namespace ToDoList
                     }
                     else
                     {
-                        menu.FullUpdateFailed();
+                        menu.NotificationFailure("Task not updated failure");
                     }
                 }
                 else if (Convert.ToChar(answerKey.KeyChar) == menu.CommandKey["delete"])
@@ -627,7 +612,7 @@ namespace ToDoList
                     }
                     else
                     {
-                        menu.DeleteFailed();
+                        menu.NotificationFailure("Deleting task failed");
                     }
                 }
             }
